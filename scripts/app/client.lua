@@ -125,11 +125,23 @@ remp_client = require "remp:client"
 remp_client:init(conn)
 
 local pid = hud.get_player()
-local tickid = 0
+
+local function world_loop()
+    local tickid = 0
+    while true do
+        sleep(1.0 / 20.0)
+        rules.set("allow-fast-interaction", false)
+        tickid = tickid + 1
+        if tickid % 2 == 0 then
+            remp_client:movement(pid)
+        end
+    end
+end
+
+local world_co = coroutine.create(world_loop)
 
 while socket:is_alive() do
     app.tick()
-    tickid = tickid + 1
     if not world.is_open() then
         remp_client:leave()
         conn:close()
@@ -185,8 +197,15 @@ while socket:is_alive() do
                 string.format("unhandled packet %s %s", opcode, json.tostring(data)))
         end
     end
-    if tickid % 6 == 0 then
-        remp_client:movement(pid)
+    if world_co then
+        local success, err = coroutine.resume(world_co)
+        if not success then
+            debug.error("error in the world coroutine: "..err)
+            world_co = nil
+            gui.alert(err, function()
+                remp_client:leave()
+            end)
+        end
     end
 end
 

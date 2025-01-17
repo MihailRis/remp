@@ -38,6 +38,7 @@ end
 
 function client:leave()
     self.conn:send(remp.OPCODE_LEAVE, {})
+    self.conn:close()
 end
 
 function client:movement(pid)
