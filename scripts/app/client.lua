@@ -97,7 +97,6 @@ while socket:is_alive() do
     elseif opcode == remp.OPCODE_CHUNK then
         table.insert(chunks_data, data)
     elseif opcode == remp.OPCODE_PLAYERS then
-        debug.print(data)
         perform_players(data)
         player.set_loading_chunks(local_player, true)
         break
@@ -168,7 +167,7 @@ while socket:is_alive() do
     while opcode do 
         opcode, data = conn:recv()
         if opcode == remp.OPCODE_CHAT then
-            console.log(data[1])
+            console.chat(data[1])
         elseif opcode == remp.OPCODE_DISCONNECT then
             if world.is_open() then
                 hud.pause()
