@@ -120,7 +120,8 @@ local function send_initial_world_data(conn)
         world.get_seed(),
         pack.get_installed(),
         conn.pid,
-        conn.uuid
+        conn.uuid,
+        world.get_day_time()
     })
     local total_required = table.count_pairs(modified_chunks)
     local sent = {}

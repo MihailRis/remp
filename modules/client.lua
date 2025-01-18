@@ -23,7 +23,7 @@ function client:save_login(server_uuid, client_uuid)
     self.logins[server_uuid] = client_uuid
 
     local logins_file = pack.shared_file("remp", "logins.json")
-    --//TODO file.write(logins_file, json.tostring(self.logins, true))
+    file.write(logins_file, json.tostring(self.logins, true))
 end
 
 --- Retrieve saved client UUID for server

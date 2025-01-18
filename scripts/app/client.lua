@@ -14,6 +14,15 @@ if not connect.ip then
     return
 end
 
+local function leave_to_menu()
+    if world.is_open() then
+        app.close_world(false)
+    else
+        menu:reset()
+        menu.page = "main" 
+    end
+end
+
 menu.page = "connecting"
 
 local state = "connecting"
@@ -24,9 +33,7 @@ end)
 if not status then
     debug.error(socket)
     app.reset_content()
-    gui.alert("Connection error: "..socket, function()
-        menu.page = "main"
-    end)
+    gui.alert("Connection error: "..socket, leave_to_menu)
     return
 end
 
@@ -34,9 +41,7 @@ app.sleep_until(function() return state ~= "connecting" or not socket:is_alive()
 
 if not socket:is_alive() then
     app.reset_content()
-    gui.alert("Connection refused", function()
-        menu.page = "main"
-    end)
+    gui.alert("Connection refused", leave_to_menu)
     return
 end
 
@@ -83,7 +88,7 @@ while socket:is_alive() do
         goto continue
     end
     if opcode == remp.OPCODE_WORLD then
-        local generator, seed, packs, pid, uuid = unpack(data)
+        local generator, seed, packs, pid, uuid, daytime = unpack(data)
         remp_client:save_login(server_uuid, uuid)
 
         conn.pid = pid
@@ -94,6 +99,9 @@ while socket:is_alive() do
 
         app.new_world("", tostring(seed), generator, pid)
         player.set_loading_chunks(pid, false)
+        time.post_runnable(function ()
+            world.set_day_time(daytime)
+        end)
     elseif opcode == remp.OPCODE_CHUNK then
         table.insert(chunks_data, data)
     elseif opcode == remp.OPCODE_PLAYERS then
@@ -110,9 +118,7 @@ end
 
 if not world.is_open() then
     app.reset_content()
-    gui.alert("Connection refused", function()
-        menu.page = "main"
-    end)
+    gui.alert("Connection refused", leave_to_menu)
     return
 end
 
@@ -142,12 +148,14 @@ local function world_loop()
 end
 
 local world_co = coroutine.create(world_loop)
+local exited = false
 
 while socket:is_alive() do
     app.tick()
     if not world.is_open() then
         remp_client:leave()
         conn:close()
+        exited = true
         break
     end
 
@@ -172,14 +180,7 @@ while socket:is_alive() do
             if world.is_open() then
                 hud.pause()
             end
-            gui.alert(gui.str("Connection refused: "..data[1]), function()
-                if world.is_open() then
-                    app.close_world(false)
-                else
-                    menu:reset()
-                    menu.page = "main"
-                end
-            end)
+            gui.alert(gui.str("Connection refused: "..data[1]), leave_to_menu)
             return
         elseif opcode == remp.OPCODE_MOVEMENT then
             local pid = data[1]
@@ -231,11 +232,8 @@ while socket:is_alive() do
     end
 end
 
-gui.alert(gui.str("Connection refused"), function()
-    if world.is_open() then
-        app.close_world(false)
-    else
-        menu:reset()
-        menu.page = "main" 
-    end
-end)
+if exited then
+    leave_to_menu()
+else
+    gui.alert(gui.str("Connection refused"), leave_to_menu)
+end
