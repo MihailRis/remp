@@ -15,5 +15,6 @@ local remp = {
     ERR_BANNED="account is banned",
     ERR_INTERNAL="internal error",
     ERR_ALREADY_ONLINE="user is online already",
+    ERR_OVERLOAD="client data overload",
 }
 return remp

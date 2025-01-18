@@ -83,6 +83,10 @@ function Connection:isAlive()
     return self.socket:is_alive()
 end
 
+function Connection:available()
+    return self.socket:available()
+end
+
 return {
     Connection=Connection
 }

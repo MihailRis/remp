@@ -4,6 +4,7 @@ port=60019
 world_name="server"
 world_seed="2025"
 generator="core:default"
+max_client_load=1e6
 ]]
 local DEFAULTS = toml.parse(DEFAULTS_STR)
 
@@ -191,36 +192,41 @@ end
 
 local function client_world_loop(conn)
     while conn:isAlive() do
-        local opcode, object = conn:recv()
-        if not opcode then
-            goto continue
-        end
-        if opcode == remp.OPCODE_CHAT then
-            local full_msg = "**"..conn.full_username..":** "..object[1]
-            broadcast(remp.OPCODE_CHAT, {full_msg})
-        elseif opcode == remp.OPCODE_LEAVE then
-            conn:close()
+        if (conn:available() or 0) > config.max_client_load then
+            conn:disconnect(remp.ERR_OVERLOAD)
             break
-        elseif opcode == remp.OPCODE_MOVEMENT then
-            player.set_pos(conn.pid, unpack(object[1]))
-            player.set_rot(conn.pid, unpack(object[2]))
-            broadcast(remp.OPCODE_MOVEMENT, {
-                conn.pid, object[1], object[2],
-            }, conn.uuid)
-        elseif opcode == remp.OPCODE_BLOCK_EVENT then
-            local x, z = object[1], object[3]
-            local cx, cz = util.get_chunk(x, z)
-            modified_chunks[util.chunk_id(cx, cz)] = CHUNK_STATUS_DIRTY
-            broadcast(remp.OPCODE_BLOCK_EVENT, {
-                conn.pid, unpack(object),
-            }, conn.uuid)
-        elseif opcode == remp.OPCODE_CHUNK then
-            local cx, cz = object[1], object[2]
-            local chunkid = util.chunk_id(cx, cz)
-            chunks_data[chunkid] = object[3]
-            modified_chunks[chunkid] = CHUNK_STATUS_OK
         end
-        ::continue::
+        for i=1,20 do
+            local opcode, object = conn:recv()
+            if not opcode then
+                break
+            end
+            if opcode == remp.OPCODE_CHAT then
+                local full_msg = "**"..conn.full_username..":** "..object[1]
+                broadcast(remp.OPCODE_CHAT, {full_msg})
+            elseif opcode == remp.OPCODE_LEAVE then
+                conn:close()
+                return
+            elseif opcode == remp.OPCODE_MOVEMENT then
+                player.set_pos(conn.pid, unpack(object[1]))
+                player.set_rot(conn.pid, unpack(object[2]))
+                broadcast(remp.OPCODE_MOVEMENT, {
+                    conn.pid, object[1], object[2],
+                }, conn.uuid)
+            elseif opcode == remp.OPCODE_BLOCK_EVENT then
+                local x, z = object[1], object[3]
+                local cx, cz = util.get_chunk(x, z)
+                modified_chunks[util.chunk_id(cx, cz)] = CHUNK_STATUS_DIRTY
+                broadcast(remp.OPCODE_BLOCK_EVENT, {
+                    conn.pid, unpack(object),
+                }, conn.uuid)
+            elseif opcode == remp.OPCODE_CHUNK then
+                local cx, cz = object[1], object[2]
+                local chunkid = util.chunk_id(cx, cz)
+                chunks_data[chunkid] = object[3]
+                modified_chunks[chunkid] = CHUNK_STATUS_OK
+            end
+        end
         coroutine.yield()
     end
 end
