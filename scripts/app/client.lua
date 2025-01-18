@@ -76,6 +76,7 @@ local function perform_players(data)
     end
 end
 
+local chunks_data = {}
 while socket:is_alive() do
     local opcode, data = conn:recv()
     if not opcode then
@@ -93,7 +94,10 @@ while socket:is_alive() do
 
         app.new_world("", tostring(seed), generator, pid)
         player.set_loading_chunks(pid, false)
+    elseif opcode == remp.OPCODE_CHUNK then
+        table.insert(chunks_data, data)
     elseif opcode == remp.OPCODE_PLAYERS then
+        debug.print(data)
         perform_players(data)
         player.set_loading_chunks(local_player, true)
         break
@@ -148,6 +152,16 @@ while socket:is_alive() do
         break
     end
 
+    local new_chunks_data = {}
+    if #chunks_data > 0 then
+        for i, chunk_data_entry in ipairs(chunks_data) do
+            if not world.set_chunk_data(unpack(chunk_data_entry)) then
+                table.insert(new_chunks_data, chunk_data_entry)
+            end
+        end
+    end
+    chunks_data = new_chunks_data
+
     local opcode = true
     local data
 
@@ -191,6 +205,15 @@ while socket:is_alive() do
                 block.place(x, y, z, id, states, pid)
             elseif event == 2 then
                 events.emit(block.name(id)..".interact", x, y, z, pid)
+            end
+        elseif opcode == remp.OPCODE_CHUNK then
+            local cx, cz = data[1], data[2]
+            world.set_chunk_data(cx, cz, data[3])
+        elseif opcode == remp.OPCODE_REQUEST_CHUNK then
+            local cx, cz = data[1], data[2]
+            local chunk_data = world.get_chunk_data(cx, cz)
+            if chunk_data then
+                remp_client:send_chunk(cx, cz, chunk_data)
             end
         elseif opcode then
             debug.warning(

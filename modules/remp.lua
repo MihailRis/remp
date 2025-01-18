@@ -8,6 +8,8 @@ local remp = {
     OPCODE_MOVEMENT = 7,
     OPCODE_PLAYERS = 8,
     OPCODE_BLOCK_EVENT = 9,
+    OPCODE_REQUEST_CHUNK = 10,
+    OPCODE_CHUNK = 11,
 
     ERR_NO_ACCOUNT="no account",
     ERR_BANNED="account is banned",

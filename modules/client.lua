@@ -54,4 +54,10 @@ function client:block_event(x, y, z, eventid, id, states)
     })
 end
 
+function client:send_chunk(x, z, chunk_data)
+    self.conn:send(remp.OPCODE_CHUNK, {
+        x, z, chunk_data
+    })
+end
+
 return client

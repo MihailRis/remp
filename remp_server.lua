@@ -3,6 +3,7 @@ local DEFAULTS_STR = [[
 port=60019
 world_name="server"
 world_seed="2025"
+generator="core:default"
 ]]
 local DEFAULTS = toml.parse(DEFAULTS_STR)
 
@@ -21,7 +22,7 @@ end
 
 -- Preparing the world
 app.reconfig_packs({"base", "remp"}, {})
-app.new_world(config.world_name, config.world_seed, "core:default")
+app.new_world(config.world_name, config.world_seed, config.generator)
 app.save_world()
 
 local remp     = require "remp:remp"
@@ -34,6 +35,11 @@ accounts:load()
 local Connection = packets.Connection
 
 local clients = {}
+local modified_chunks = {}
+local chunks_data = {}
+
+local CHUNK_STATUS_DIRTY = 1
+local CHUNK_STATUS_OK = 2
 
 local function broadcast(opcode, data, ignore_uuid)
     for _, client in ipairs(clients) do
@@ -59,6 +65,54 @@ local function create_player_data(client)
     }
 end
 
+local function random_client(except_uuid)
+    if #clients == 0 or (#clients == 1 and clients[1].uuid == except_uuid) then
+        return nil
+    end
+    while true do
+        local client = clients[math.random(1, #clients)]
+        if client.uuid ~= except_uuid then
+            return client
+        end
+    end
+end
+
+local function request_chunk(client, chunkid, x, z)
+    client:send(remp.OPCODE_REQUEST_CHUNK, {x, z})
+    for i=1,20 do
+        coroutine.yield()
+        -- client have been disconnected
+        if not table.has(clients, client) or modified_chunks[chunkid] == CHUNK_STATUS_OK then
+            break
+        end
+    end
+end
+
+local function send_chunk_requests(conn, sent, requests)
+    for chunkid, status in pairs(modified_chunks) do
+        if table.has(sent, chunkid) then
+            goto continue
+        end
+        local x, z = util.chunk_from_id(chunkid)
+        if status == CHUNK_STATUS_OK then
+            conn:send(remp.OPCODE_CHUNK, {x, z, chunks_data[chunkid]})
+            table.insert(sent, chunkid)
+        elseif status == CHUNK_STATUS_DIRTY then
+            local client = random_client(conn.uuid)
+            if client == nil then
+                if chunks_data[chunkid] ~= nil then
+                    conn:send(remp.OPCODE_CHUNK, {x, z, chunks_data[chunkid]})
+                end
+            else
+                local co = coroutine.create(request_chunk)
+                coroutine.resume(co, client, chunkid, x, z)
+                table.insert(requests, {chunkid, co})
+            end
+        end
+        ::continue::
+    end
+end
+
 local function send_initial_world_data(conn)
     conn:send(remp.OPCODE_WORLD, {
         world.get_generator(),
@@ -67,6 +121,38 @@ local function send_initial_world_data(conn)
         conn.pid,
         conn.uuid
     })
+    local total_required = table.count_pairs(modified_chunks)
+    local sent = {}
+    local requests = {}
+    local attempts = 3
+    while attempts > 0 do
+        if #sent == total_required then
+            print(string.format("all %s chunks are sent", total_required))
+            break
+        end
+        send_chunk_requests(conn, sent, requests)
+        print(string.format("attempt #%s -> sent %s chunk requests", (4-attempts), #requests))
+
+        while #requests > 0 do
+            coroutine.yield()
+            local remaining = {}
+            for _, request in ipairs(requests) do
+                local chunkid, co = unpack(request)
+                if coroutine.status(co) ~= "dead" then
+                    local success, err = coroutine.resume(co)
+                    if not success then
+                        debug.error("chunk request error: "..err)
+                    else
+                        table.insert(remaining, {chunkid, co})
+                    end
+                end
+                ::continue::
+            end
+            requests = remaining
+        end
+        attempts = attempts - 1
+    end
+
     local players_data = {}
     for _, client in ipairs(clients) do
         if client.pid and client.full_username then
@@ -122,9 +208,17 @@ local function client_world_loop(conn)
                 conn.pid, object[1], object[2],
             }, conn.uuid)
         elseif opcode == remp.OPCODE_BLOCK_EVENT then
+            local x, z = object[1], object[3]
+            local cx, cz = util.get_chunk(x, z)
+            modified_chunks[util.chunk_id(cx, cz)] = CHUNK_STATUS_DIRTY
             broadcast(remp.OPCODE_BLOCK_EVENT, {
                 conn.pid, unpack(object),
             }, conn.uuid)
+        elseif opcode == remp.OPCODE_CHUNK then
+            local cx, cz = object[1], object[2]
+            local chunkid = util.chunk_id(cx, cz)
+            chunks_data[chunkid] = object[3]
+            modified_chunks[chunkid] = CHUNK_STATUS_OK
         end
         ::continue::
         coroutine.yield()
@@ -174,7 +268,7 @@ while true do -- TODO: Add a way to stop the server
         if not success then
             debug.error("client coroutine error: "..err)
             client:disconnect(remp.ERR_INTERNAL)
-            table.insert(dead, client)
+            table.insert(dead, i)
         end
         if not client:isAlive() then
             table.insert(dead, i)
