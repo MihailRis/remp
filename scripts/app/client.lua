@@ -72,7 +72,12 @@ local function perform_players(data)
         if pdata[2] then
             player.create("", pid)
             player.set_name(pid, pdata[3])
-            player.set_pos(pid, unpack(pdata[4]))
+
+            local x, y, z = unpack(pdata[4])
+            if not (math.abs(x) < 0.001 and 
+                    math.abs(z) < 0.001 and math.abs(y-100) < 0.001) then
+                player.set_pos(pid, x, y, z)
+            end
             player.set_rot(pid, unpack(pdata[5]))
             player.set_loading_chunks(pid, false)
         else
