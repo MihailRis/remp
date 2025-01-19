@@ -26,6 +26,8 @@ app.reconfig_packs({"base", "remp"}, {})
 app.new_world(config.world_name, config.world_seed, config.generator)
 app.save_world()
 
+local modchunks_file = pack.data_file("remp", "modified_chunks.json")
+
 local remp     = require "remp:remp"
 local util     = require "remp:util"
 local packets  = require "remp:packets"
@@ -41,6 +43,27 @@ local chunks_data = {}
 
 local CHUNK_STATUS_DIRTY = 1
 local CHUNK_STATUS_OK = 2
+
+if file.exists(modchunks_file) then
+    modified_chunks = json.parse(file.read(modchunks_file)).chunks
+    for chunkid, status in pairs(modified_chunks) do
+        if status == CHUNK_STATUS_OK then
+            local cx, cz = util.chunk_from_id(chunkid)
+            local data = world.get_chunk_data(cx, cz)
+            if data then
+                chunks_data[chunkid] = data
+            end
+        end
+    end
+end
+
+events.on("remp:save_world", function ()
+    for chunkid, data in pairs(chunks_data) do
+        local cx, cz = util.chunk_from_id(chunkid)
+        world.save_chunk_data(cx, cz, data)
+    end
+    file.write(modchunks_file, json.tostring({chunks=modified_chunks}))
+end)
 
 local function broadcast(opcode, data, ignore_uuid)
     for _, client in ipairs(clients) do
@@ -289,6 +312,9 @@ while true do -- TODO: Add a way to stop the server
         table.remove(clients, index)
         if client and client.full_username then
             on_client_disconnect(client)
+        end
+        if #clients == 0 then
+            app.save_world()
         end
     end
     if #dead > 0 then

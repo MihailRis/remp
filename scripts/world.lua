@@ -44,6 +44,10 @@ function on_chunk_remove(x, z)
     end
 end
 
+function on_world_save()
+    events.emit("remp:save_world")
+end
+
 function on_world_quit()
     for i, chunkid in ipairs(modified_chunks) do
         local x, z = util.chunk_from_id(chunkid)
