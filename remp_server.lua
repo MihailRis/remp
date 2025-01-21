@@ -4,7 +4,8 @@ port=60019
 world_name="server"
 world_seed="2025"
 generator="core:default"
-max_client_load=1e6
+max_client_load=1e4
+content=["base"]
 ]]
 local DEFAULTS = toml.parse(DEFAULTS_STR)
 
@@ -22,9 +23,14 @@ else
 end
 
 -- Preparing the world
-app.reconfig_packs({"base", "remp"}, {})
-app.new_world(config.world_name, config.world_seed, config.generator)
-app.save_world()
+if world.exists(config.world_name) then
+    app.open_world(config.world_name)
+else
+    table.insert(config.content, "remp")
+    app.reconfig_packs(config.content, {})
+    app.new_world(config.world_name, config.world_seed, config.generator)
+    app.save_world()
+end
 
 local modchunks_file = pack.data_file("remp", "modified_chunks.json")
 
@@ -34,6 +40,7 @@ local packets  = require "remp:packets"
 local accounts = require "remp:accounts"
 
 accounts:load()
+accounts:save()
 
 local Connection = packets.Connection
 
@@ -62,7 +69,8 @@ events.on("remp:save_world", function ()
         local cx, cz = util.chunk_from_id(chunkid)
         world.save_chunk_data(cx, cz, data)
     end
-    file.write(modchunks_file, json.tostring({chunks=modified_chunks}))
+    file.write(modchunks_file, json.tostring({chunks=modified_chunks}, true))
+    accounts:save()
 end)
 
 local function broadcast(opcode, data, ignore_uuid)
@@ -206,7 +214,7 @@ local function log_in(conn)
             return false
         end
     end
-    conn.pid = accounts:on_login(conn.uuid)
+    conn.pid = accounts:on_login(conn.uuid, conn.username)
     conn.full_username = string.format("%s[%s]", conn.username, conn.pid)
     send_initial_world_data(conn)
     broadcast(remp.OPCODE_CHAT, {"**"..conn.full_username.." joined the game**"})

@@ -12,6 +12,7 @@ function accounts:create(pid)
         uuid=uuid,
         pid=pid,
         banned=false,
+        journal={},
     }
     self.repo[uuid] = account
     return uuid
@@ -35,13 +36,20 @@ function accounts:save()
         server_uuid=self.server_uuid,
         accounts=self.repo,
         banned_ips=self.banned_ips,
-    }))
+    }, true))
 end
 
-function accounts:on_login(uuid)
+function accounts:on_login(uuid, username)
     local acc = accounts.repo[uuid]
     local pid = acc.pid
     player.set_suspended(pid, false)
+    
+    if not acc.journal then
+        acc.journal = {}
+    end
+    table.insert(acc.journal, {
+        username, os.date("!%Y-%m-%dT%TZ")
+    })
     return pid
 end
 
