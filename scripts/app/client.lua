@@ -18,6 +18,7 @@ local function leave_to_menu()
     if world.is_open() then
         app.close_world(false)
     else
+        app.reset_content()
         menu:reset()
         menu.page = "main" 
     end
@@ -53,8 +54,10 @@ local local_player
 
 local conn = packets.Connection:new(socket)
 do
-    local opcode, data = conn:recvWait()
-    if opcode == remp.OPCODE_SERVER then
+    local opcode, data = conn:recvWait(5)
+    if opcode == nil then
+        return gui.alert("Connection timed out", leave_to_menu)
+    elseif opcode == remp.OPCODE_SERVER then
         server_uuid = data.uuid
         conn:send(remp.OPCODE_JOIN, {
             uuid=remp_client:get_login(data.uuid),
@@ -88,9 +91,9 @@ end
 
 local chunks_data = {}
 while socket:is_alive() do
-    local opcode, data = conn:recv()
+    local opcode, data = conn:recvWait(5)
     if not opcode then
-        goto continue
+        return gui.alert("Connection refused", leave_to_menu)
     end
     if opcode == remp.OPCODE_WORLD then
         local generator, seed, packs, pid, uuid, daytime = unpack(data)
@@ -122,7 +125,6 @@ while socket:is_alive() do
 end
 
 if not world.is_open() then
-    app.reset_content()
     gui.alert("Connection refused", leave_to_menu)
     return
 end

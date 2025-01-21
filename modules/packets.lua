@@ -56,13 +56,21 @@ function Connection:recv() --> opcode, payload
     return opcode, object
 end
 
-function Connection:recvWait() --> opcode, payload
+function Connection:recvWait(timeout) --> opcode, payload
+    timeout = timeout or 1e9
+
+    local init_time = time.uptime()
     while self:isAlive() do
         local opcode, object = self:recv()
         if opcode then
             return opcode, object
         end
         coroutine.yield()
+        if time.uptime() - init_time >= timeout then
+            debug.error(string.format("recvWait timeout %s sec.", timeout))
+            self:close()
+            return
+        end
     end
 end
 
