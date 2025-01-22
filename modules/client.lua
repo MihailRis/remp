@@ -36,6 +36,10 @@ function client:chat(message)
     self.conn:send(remp.OPCODE_CHAT, {message})
 end
 
+function client:submit_command(text)
+    self.conn:send(remp.OPCODE_COMMAND, {text})
+end
+
 function client:leave()
     self.conn:send(remp.OPCODE_LEAVE, {})
     self.conn:close()

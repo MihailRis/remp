@@ -10,6 +10,7 @@ local remp = {
     OPCODE_BLOCK_EVENT = 9,
     OPCODE_REQUEST_CHUNK = 10,
     OPCODE_CHUNK = 11,
+    OPCODE_COMMAND = 12,
 
     ERR_NO_ACCOUNT="no account",
     ERR_BANNED="account is banned",
