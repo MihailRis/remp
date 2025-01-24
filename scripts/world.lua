@@ -3,9 +3,9 @@ local util   = require "util"
 
 local modified_chunks = {}
 
-function console.submit(text)
-    client:submit_command(text)
-end
+-- function console.submit(text)
+--     client:submit_command(text)
+-- end
 
 local function modify_chunk_at_block(x, z)
     local chunkid = util.chunk_id(util.get_chunk(x, z))

@@ -270,12 +270,12 @@ local function client_world_loop(conn)
                     chunks:mark_cancelled(cx, cz)
                 end
             elseif opcode == remp.OPCODE_COMMAND then
-                local text = object[1]
-                console.set("player", conn.pid)
-                local status, result = pcall(console.execute, text)
-                if result then
-                    conn:send(remp.OPCODE_CHAT, {result})
-                end
+                -- local text = object[1]
+                -- console.set("player", conn.pid)
+                -- local status, result = pcall(console.execute, text)
+                -- if result then
+                --     conn:send(remp.OPCODE_CHAT, {result})
+                -- end
             end
         end
         coroutine.yield()
@@ -319,7 +319,7 @@ end)
 
 local dead = {}
 -- Main loop
-while true do -- TODO: Add a way to stop the server
+while true do -- stop the server with SIGTERM (kill or systemctl stop)
     for i, client in ipairs(clients) do
         local success, err = coroutine.resume(client.co)
         if not success then
