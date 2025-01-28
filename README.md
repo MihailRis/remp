@@ -42,3 +42,12 @@ Click to `client` script.
 ![image](https://github.com/user-attachments/assets/983eebd6-3683-4601-a8cb-066abd3d3867)
 
 Fill in the `IP` and `Username` fields and click `Connect`.
+
+
+## Running in a docker container
+
+build image
+docker build -t remp-server .
+
+To run server on port 8080
+docker run -p 8080:60019 remp-server
