@@ -47,7 +47,11 @@ Fill in the `IP` and `Username` fields and click `Connect`.
 ## Running in a docker container
 
 build image
-docker build -t remp-server .
+```sh 
+ docker build -t remp-server .
+```
 
 To run server on port 8080
-docker run -p 8080:60019 remp-server
+```sh
+  docker run -p 8080:60019 remp-server
+```
