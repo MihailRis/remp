@@ -33,7 +33,6 @@ local status, socket = pcall(network.tcp_connect, connect.ip, connect.port, func
 end)
 if not status then
     debug.error(socket)
-    app.reset_content()
     gui.alert("Connection error: "..socket, leave_to_menu)
     return
 end
@@ -41,7 +40,6 @@ end
 app.sleep_until(function() return state ~= "connecting" or not socket:is_alive() end)
 
 if not socket:is_alive() then
-    app.reset_content()
     gui.alert("Connection refused", leave_to_menu)
     return
 end
