@@ -1,6 +1,9 @@
 local remp = require "remp:remp"
+local util = require "remp:util"
+
 local client = {
-    logins = {}
+    logins = {},
+    loaded_chunks = {}
 }
 
 function client:init(conn)
@@ -56,6 +59,15 @@ function client:block_event(x, y, z, eventid, id, states)
     self.conn:send(remp.OPCODE_BLOCK_EVENT, {
         x, y, z, eventid, id, states
     })
+    self:mark_chunk_loaded(util.get_chunk(x, z))
+end
+
+function client:has_chunk(x, z)
+    return table.has(self.loaded_chunks, util.chunk_id(x, z))
+end
+
+function client:mark_chunk_loaded(x, z)
+    self.loaded_chunks[util.chunk_id(x, z)] = true
 end
 
 function client:send_chunk(x, z, chunk_data)

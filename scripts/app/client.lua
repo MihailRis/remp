@@ -44,6 +44,7 @@ if not socket:is_alive() then
     return
 end
 
+local util        = require "remp:util"
 local remp_client = require "remp:client"
 remp_client:init()
 
@@ -110,6 +111,7 @@ while socket:is_alive() do
         end)
     elseif opcode == remp.OPCODE_CHUNK then
         table.insert(chunks_data, data)
+        remp_client:mark_chunk_loaded(util.get_chunk(data[1], data[2]))
     elseif opcode == remp.OPCODE_PLAYERS then
         perform_players(data)
         player.set_loading_chunks(local_player, true)
@@ -135,6 +137,7 @@ gui_util.add_page_dispatcher(function(name, args)
 end)
 
 -- modules will reset on world load
+util  = require "remp:util"
 remp_client = require "remp:client"
 remp_client:init(conn)
 
@@ -221,9 +224,11 @@ while socket:is_alive() do
             world.set_chunk_data(cx, cz, data[3])
         elseif opcode == remp.OPCODE_REQUEST_CHUNK then
             local cx, cz = data[1], data[2]
-            local chunk_data = world.get_chunk_data(cx, cz)
-            if chunk_data then
+            if client:has_chunk(cx, cz) then
+                local chunk_data = world.get_chunk_data(cx, cz)
                 remp_client:send_chunk(cx, cz, chunk_data)
+            else
+                remp_client:send_chunk(cx, cz, nil)
             end
         elseif opcode then
             debug.warning(
