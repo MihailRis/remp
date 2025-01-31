@@ -167,8 +167,13 @@ while socket:is_alive() do
     local new_chunks_data = {}
     if #chunks_data > 0 then
         for i, chunk_data_entry in ipairs(chunks_data) do
-            if not world.set_chunk_data(unpack(chunk_data_entry)) then
-                table.insert(new_chunks_data, chunk_data_entry)
+            local success, result = pcall(world.set_chunk_data, unpack(chunk_data_entry))
+            if success then
+                if not result then
+                    table.insert(new_chunks_data, chunk_data_entry)
+                end
+            else
+                debug.error("error in set_chunk_data: "..result)
             end
         end
     end

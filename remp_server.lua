@@ -340,9 +340,10 @@ while true do -- stop the server with SIGTERM (kill or systemctl stop)
         if client and client.full_username then
             on_client_disconnect(client)
         end
-        if #clients == 0 then
+        -- TODO: autosave
+        --if #clients == 0 then
             app.save_world()
-        end
+        --end
     end
     if #dead > 0 then
         dead = {}
@@ -355,5 +356,4 @@ for _, client in ipairs(clients) do
     client:close()
 end
 
--- Close the world without saving
-world.close(false)
+world.close(true)
