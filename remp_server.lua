@@ -226,6 +226,7 @@ local function log_in(conn)
     conn.pid = accounts:on_login(conn.uuid, conn.username)
     conn.full_username = string.format("%s[%s]", conn.username, conn.pid)
     send_initial_world_data(conn)
+    player.set_name(conn.pid, conn.full_username)
     broadcast(remp.OPCODE_CHAT, {"**"..get_player_name(conn.pid).." joined the game**"})
     broadcast(remp.OPCODE_PLAYERS, {create_player_data(conn)}, conn.uuid)
     return true
@@ -311,7 +312,6 @@ local server = network.tcp_open(config.port, function (socket)
         if not log_in(conn) then
             return
         end
-        player.set_name(conn.pid, conn.full_username)
         client_world_loop(conn)
     end)
     table.insert(clients, conn)

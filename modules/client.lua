@@ -67,7 +67,7 @@ function client:has_chunk(x, z)
 end
 
 function client:mark_chunk_loaded(x, z)
-    self.loaded_chunks[util.chunk_id(x, z)] = true
+    table.insert(self.loaded_chunks, util.chunk_id(x, z))
 end
 
 function client:send_chunk(x, z, chunk_data)

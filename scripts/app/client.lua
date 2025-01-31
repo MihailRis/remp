@@ -224,7 +224,7 @@ while socket:is_alive() do
             world.set_chunk_data(cx, cz, data[3])
         elseif opcode == remp.OPCODE_REQUEST_CHUNK then
             local cx, cz = data[1], data[2]
-            if client:has_chunk(cx, cz) then
+            if remp_client:has_chunk(cx, cz) then
                 local chunk_data = world.get_chunk_data(cx, cz)
                 remp_client:send_chunk(cx, cz, chunk_data)
             else
