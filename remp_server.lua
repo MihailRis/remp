@@ -5,6 +5,7 @@ world_name="server"
 world_seed="2025"
 generator="core:default"
 max_client_load=1e4
+max_chunk_request_attempts=10
 content=["base"]
 ]]
 local DEFAULTS = toml.parse(DEFAULTS_STR)
@@ -172,7 +173,7 @@ local function send_initial_world_data(conn)
     local total_required = table.count_pairs(chunks:get_modified_chunks())
     local sent = {}
     local requests = {}
-    local max_attemps = 5
+    local max_attemps = config.max_chunk_request_attempts
     local attempts = max_attemps
     while attempts > 0 do
         if #sent == total_required then
