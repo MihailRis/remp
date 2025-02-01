@@ -5,8 +5,8 @@ local remp    = require "remp:remp"
 local packets = require "remp:packets"
 
 local connect = session.get_entry('remp:client')
-menu.page = "connect"
-app.sleep_until(function() return menu.page ~= "connect" or connect.ip end)
+menu.page = "server_list"
+app.sleep_until(function() return (menu.page ~= "server_list" and menu.page ~= "add_server") or connect.ip end)
 session.reset_entry('remp:client')
 
 if not connect.ip then
@@ -173,8 +173,8 @@ while socket:is_alive() do
             local success, result = pcall(world.set_chunk_data, unpack(chunk_data_entry))
             if success then
                 if not result then
-                    table.insert(new_chunks_data, chunk_data_entry)
-                end
+                table.insert(new_chunks_data, chunk_data_entry)
+            end
             else
                 debug.error("error in set_chunk_data: "..result)
             end
@@ -225,7 +225,7 @@ while socket:is_alive() do
         elseif opcode == remp.OPCODE_REQUEST_CHUNK then
             local cx, cz = data[1], data[2]
             if remp_client:has_chunk(cx, cz) then
-                local chunk_data = world.get_chunk_data(cx, cz)
+            local chunk_data = world.get_chunk_data(cx, cz)
                 remp_client:send_chunk(cx, cz, chunk_data)
             else
                 remp_client:send_chunk(cx, cz, nil)

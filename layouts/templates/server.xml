@@ -1,0 +1,12 @@
+<container id="container" size='380,66' color='#0F1E2DB2' hover-color='#162B3399' onclick='%{connect_func}("%{ip}", %{port})'>
+	<button margin='4'
+		gravity='center-right'
+		color='#00000000'
+		hover-color='#FFFFFF2B'
+		onclick='%{remove_server_func}'
+		padding='0'>
+		<image src='gui/delete_icon' size='32,32' color='#FFFFFF50'/>
+	</button>
+	<label pos='4,15'>%{name}</label>
+	<label pos='4,35'>%{ip}:%{port}</label>
+</container>

@@ -1,0 +1,8 @@
+<panel size="400" color='#00000040' context='menu'>
+	<label margin="5">@world.Name</label>
+	<textbox id="server_name" padding="2" placeholder="REMP Server"></textbox>
+	<label margin="5">@IP</label>
+	<textbox id="ip" padding="2" validator="is_valid_address_port" hint="address:port"></textbox>
+	<button onclick="add_server()">@Add</button>
+	<button onclick='menu:back()'>@Back</button>
+</panel>
