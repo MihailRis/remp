@@ -1,14 +1,7 @@
 local server_list = require "remp:server_list"
 
-function is_valid_address_port(str)
-    local ip_port = string.split(str, ':')
-    if ip_port == nil or #ip_port ~= 2 then
-        return false
-    end
-    local ip = ip_port[1]
-    local port_str = ip_port[2]
-
-    local ip_parts = string.split(ip, '.')
+function is_valid_ip(ip_str)
+    local ip_parts = string.split(ip_str, '.')
     if ip_parts == nil or #ip_parts ~= 4 then
         return false
     end
@@ -24,6 +17,49 @@ function is_valid_address_port(str)
         if num < 0 or num > 255 then
             return false
         end
+    end
+
+    return true
+end
+
+function is_valid_domain(domain)
+    if #domain > 253 then
+        return false
+    end
+
+    local domain_parts = string.split(domain, '.')
+    if #domain_parts < 1 then
+        return false
+    end
+    if domain_parts == nil then
+        domain_parts = domain
+    end
+
+    for _, part in pairs(domain_parts) do
+        if #part < 1 or #part > 63 then
+            return false
+        end
+        if part[1] == '-' or part[#part] == '-' then
+            return false
+        end
+        if not (string.match(part, "[%w-]+") == part) then
+            return false
+        end
+    end
+    
+    return true
+end
+
+function is_valid_address_port(str)
+    local ip_port = string.split(str, ':')
+    if ip_port == nil or #ip_port ~= 2 then
+        return false
+    end
+    local ip = ip_port[1]
+    local port_str = ip_port[2]
+
+    if not is_valid_ip(ip) and not is_valid_domain(ip) then
+        return false
     end
 
     if not port_str:match("^%d+$") then
@@ -57,9 +93,9 @@ function add_server()
     if not document.ip.valid then
         return
     end
-	local name = document.server_name.text
+    local name = document.server_name.text
     local address, port = parse_address(document.ip.text)
 
-	server_list:add(name, address, port)
+    server_list:add(name, address, port)
     menu:back()
 end

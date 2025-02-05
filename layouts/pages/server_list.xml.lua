@@ -23,7 +23,7 @@ end
 
 function remove_server(index)
     server_list:remove(index)
-	create_server_list()
+    create_server_list()
 end
 
 function create_server_list()
