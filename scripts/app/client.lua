@@ -5,8 +5,8 @@ local remp    = require "remp:remp"
 local packets = require "remp:packets"
 
 local connect = session.get_entry('remp:client')
-menu.page = "connect"
-app.sleep_until(function() return menu.page ~= "connect" or connect.ip end)
+menu.page = "server_list"
+app.sleep_until(function() return (menu.page ~= "server_list" and menu.page ~= "add_server") or connect.ip end)
 session.reset_entry('remp:client')
 
 if not connect.ip then

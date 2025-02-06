@@ -1,0 +1,9 @@
+<panel size="400" color='0' interval='1' context='menu'>
+    <panel>
+        <label margin="5">@Username</label>
+        <textbox id="username" padding="2" validator="is_valid_username"></textbox>
+    </panel>
+    <panel id ="server_list" padding='5' color='#FFFFFF11' max-length='400'></panel>
+    <button onclick='menu.page="add_server"'>@Add server</button>
+    <button onclick='menu.page="main"'>@Back to Main Menu</button>
+</panel>

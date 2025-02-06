@@ -1,2 +1,5 @@
-Connect=Подключиться
+Username=Имя пользователя
+Add server=Добавить сервер
+Server name=Название сервера
+IP address=IP адрес
 Disconnect=Отключиться

@@ -64,7 +64,7 @@ function accounts:exists(uuid)
 end
 
 function accounts:is_banned(uuid)
-    local acc = accounts[uuid]
+    local acc = accounts.repo[uuid]
     if acc == nil then
         return false
     end

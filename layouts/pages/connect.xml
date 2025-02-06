@@ -1,8 +1,0 @@
-<panel size="400" color='#00000040' context='menu'>
-    <label margin="5">@IP</label>
-    <textbox id="ip" padding="2" validator="is_valid_address_port" hint="address:port"></textbox>
-    <label margin="5">@Username</label>
-    <textbox id="username" padding="2" validator="is_valid_username"></textbox>
-    <button onclick="connect()">@Connect</button>
-    <button onclick='menu.page="main"'>@Back to Main Menu</button>
-</panel>
