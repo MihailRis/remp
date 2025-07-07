@@ -1,6 +1,6 @@
 # REMP
 
-**Re**translator **m**ulti**p**layer demo implementation for [VoxelCore](github.com/MihailRis/VoxelEngine-Cpp/).
+**Re**translator **m**ulti**p**layer demo implementation for [VoxelCore](https://github.com/MihailRis/voxelcore).
 
 **Status:** in-development
 
