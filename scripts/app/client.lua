@@ -101,6 +101,7 @@ while socket:is_alive() do
         conn.pid = pid
         local_player = pid
 
+        app.reset_content()
         app.config_packs(packs)
         app.load_content()
 
