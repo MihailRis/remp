@@ -19,7 +19,7 @@ function client:init(conn)
 end
 
 function client:is_init()
-    return self.conn ~= nil 
+    return self.conn ~= nil
 end
 
 function client:save_login(server_uuid, client_uuid)
