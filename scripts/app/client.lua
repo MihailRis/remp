@@ -186,7 +186,7 @@ while socket:is_alive() do
     local opcode = true
     local data
 
-    while opcode do 
+    while opcode do
         opcode, data = conn:recv()
         if opcode == remp.OPCODE_CHAT then
             console.chat(data[1])
