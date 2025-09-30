@@ -76,4 +76,8 @@ function client:send_chunk(x, z, chunk_data)
     })
 end
 
+function client:ping(id)
+    self.conn:send(remp.OPCODE_PING, {id})
+end
+
 return client

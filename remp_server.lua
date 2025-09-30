@@ -278,6 +278,9 @@ local function client_world_loop(conn)
                 -- if result then
                 --     conn:send(remp.OPCODE_CHAT, {result})
                 -- end
+            elseif opcode == remp.OPCODE_PING then
+                local id = object[1]
+                conn:send(remp.OPCODE_PING, {id})
             end
         end
         coroutine.yield()
