@@ -1,13 +1,13 @@
 local util = require "remp:util"
 
 local accounts = {
-    server_uuid = util.generate_uuid(),
+    server_uuid = random.uuid(),
     repo = {},
     banned_ips = {}
 }
 
 function accounts:create(pid)
-    local uuid = util.generate_uuid()
+    local uuid = random.uuid()
     local account = {
         uuid=uuid,
         pid=pid,
@@ -43,7 +43,7 @@ function accounts:on_login(uuid, username)
     local acc = accounts.repo[uuid]
     local pid = acc.pid
     player.set_suspended(pid, false)
-    
+
     if not acc.journal then
         acc.journal = {}
     end

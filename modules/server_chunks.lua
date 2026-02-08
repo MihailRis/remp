@@ -24,6 +24,8 @@ function server_chunks:load()
                 if data then
                     chunks_data[chunkid] = data
                 end
+            else
+                modified_chunks[chunkid] = nil
             end
         end
     end

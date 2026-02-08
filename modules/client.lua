@@ -19,7 +19,7 @@ function client:init(conn)
 end
 
 function client:is_init()
-    return self.conn ~= nil 
+    return self.conn ~= nil
 end
 
 function client:save_login(server_uuid, client_uuid)
@@ -74,6 +74,10 @@ function client:send_chunk(x, z, chunk_data)
     self.conn:send(remp.OPCODE_CHUNK, {
         x, z, chunk_data
     })
+end
+
+function client:ping(id)
+    self.conn:send(remp.OPCODE_PING, {id})
 end
 
 return client
