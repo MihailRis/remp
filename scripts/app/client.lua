@@ -5,23 +5,38 @@ local remp    = require "remp:remp"
 local packets = require "remp:packets"
 
 local connect = session.get('remp:client')
+if vc.get_project_arg("remp-address") then
+    connect.ip = vc.get_project_arg("remp-address")
+    connect.port = tonumber(vc.get_project_arg("remp-port"))
+    connect.username = vc.get_project_arg("remp-username")
+        or ("user-" .. base64.encode_urlsafe(random.bytes()))
+    connect.login_uuid = vc.get_project_arg("remp-login-uuid")
+    if connect.login_uuid == "random" then
+        local uuid = random.uuid()
+        connect.login_uuid = uuid
+        debug.log("random generated login uuid: "..uuid)
+    end
+end
+
 menu.page = "server_list"
 app.sleep_until(function() return (menu.page ~= "server_list" and menu.page ~= "add_server") or connect.ip end)
 session.reset('remp:client')
 
-if not connect.ip then
+if type(connect.ip) ~= "string" or type(connect.port) ~= "number" then
     app.reset_content()
     return
 end
 
 local function leave_to_menu()
-    if world.is_open() then
-        app.close_world(false)
-    else
-        app.reset_content()
-        menu:reset()
-        menu.page = "main" 
-    end
+    time.post_runnable(function()
+        if world.is_open() then
+            app.close_world(false)
+        else
+            app.reset_content()
+            menu:reset()
+            menu.page = "main"
+        end
+    end)
 end
 
 menu.page = "connecting"
@@ -29,7 +44,7 @@ menu.page = "connecting"
 local state = "connecting"
 local status, socket = pcall(network.tcp_connect, connect.ip, connect.port, function(conn)
     state = "connected"
-    print("Connected to server")
+    debug.log("connected to server")
 end)
 if not status then
     debug.error(socket)
@@ -59,8 +74,8 @@ do
     elseif opcode == remp.OPCODE_SERVER then
         server_uuid = data.uuid
         conn:send(remp.OPCODE_JOIN, {
-            uuid=remp_client:get_login(data.uuid),
-            username=connect.username
+            uuid = connect.login_uuid or remp_client:get_login(data.uuid),
+            username = connect.username
         })
     else
         debug.error("expected OPCODE_SERVER, got "..opcode)
@@ -117,11 +132,13 @@ while socket:is_alive() do
         perform_players(data)
         player.set_loading_chunks(local_player, true)
         break
+    elseif opcode == remp.OPCODE_DISCONNECT then
+        gui.alert("Connection refused: "..data[1], leave_to_menu)
+        return
     else
         debug.warning(
             string.format("unhandled packet %s %s", opcode, json.tostring(data)))
     end
-    ::continue::
     app.tick()
 end
 
