@@ -11,11 +11,6 @@ if vc.get_project_arg("remp-address") then
     connect.username = vc.get_project_arg("remp-username")
         or ("user-" .. base64.encode_urlsafe(random.bytes()))
     connect.login_uuid = vc.get_project_arg("remp-login-uuid")
-    if connect.login_uuid == "random" then
-        local uuid = random.uuid()
-        connect.login_uuid = uuid
-        debug.log("random generated login uuid: "..uuid)
-    end
 end
 
 menu.page = "server_list"

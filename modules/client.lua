@@ -30,7 +30,7 @@ function client:save_login(server_uuid, client_uuid)
 end
 
 --- Retrieve saved client UUID for server
---- @return client UUID or nil
+--- @return string | nil
 function client:get_login(server_uuid)
     return self.logins[server_uuid]
 end

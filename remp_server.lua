@@ -272,6 +272,7 @@ local function client_world_loop(conn)
                     chunks:mark_cancelled(cx, cz)
                 end
             elseif opcode == remp.OPCODE_COMMAND then
+                -- FIXME
                 -- local text = object[1]
                 -- console.set("player", conn.pid)
                 -- local status, result = pcall(console.execute, text)
@@ -354,10 +355,3 @@ while true do -- stop the server with SIGTERM (kill or systemctl stop)
     end
     app.tick()
 end
-
--- Close all clients
-for _, client in ipairs(clients) do
-    client:close()
-end
-
-world.close(true)
