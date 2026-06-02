@@ -9,7 +9,7 @@ if vc.get_project_arg("remp-address") then
     connect.ip = vc.get_project_arg("remp-address")
     connect.port = tonumber(vc.get_project_arg("remp-port"))
     connect.username = vc.get_project_arg("remp-username")
-        or ("user-" .. base64.encode_urlsafe(random.bytes()))
+        or ("user-" .. base64.encode_urlsafe(random.bytes(3)))
     connect.login_uuid = vc.get_project_arg("remp-login-uuid")
 end
 
@@ -214,6 +214,7 @@ while socket:is_alive() do
     while opcode do
         opcode, data = conn:recv()
         if opcode == remp.OPCODE_CHAT then
+            debug.print(data[1])
             console.chat(data[1])
         elseif opcode == remp.OPCODE_DISCONNECT then
             if world.is_open() then
