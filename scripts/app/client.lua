@@ -154,10 +154,20 @@ util  = require "remp:util"
 remp_client = require "remp:client"
 remp_client:init(conn)
 
-local pid = hud.get_player()
-
 local ping_id = 0
 local last_ping = 0
+
+console.add_command(
+    "ping",
+    "Calculate packet roundtrip latency including processing-related delays",
+    function ()
+        last_ping = time.uptime()
+        ping_id = ping_id + 1
+        remp_client:ping(ping_id)
+    end
+)
+
+local pid = hud.get_player()
 
 local function world_loop()
     local tickid = 0
@@ -167,11 +177,6 @@ local function world_loop()
         tickid = tickid + 1
         if tickid % 2 == 0 then
             remp_client:movement(pid)
-        end
-        if time.uptime() - last_ping > 2.0 then
-            last_ping = time.uptime()
-            ping_id = ping_id + 1
-            remp_client:ping(ping_id)
         end
     end
 end
@@ -253,7 +258,7 @@ while socket:is_alive() do
             end
         elseif opcode == remp.OPCODE_PING then
             if data[1] == ping_id then
-                debug.log(string.format("ping: %s",
+                console.log(string.format("ping: %s ms",
                     math.ceil((time.uptime() - last_ping) * 1000)))
             else
                 debug.warning(string.format(
