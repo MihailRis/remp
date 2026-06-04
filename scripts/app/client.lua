@@ -1,23 +1,11 @@
 app.config_packs({"remp"})
 app.load_content()
 
-local remp    = require "remp:remp"
-local packets = require "remp:packets"
+local remp = require "remp:remp"
+local client_setup = require "remp:client/setup"
 
-local connect = session.get('remp:client')
-if vc.get_project_arg("remp-address") then
-    connect.ip = vc.get_project_arg("remp-address")
-    connect.port = tonumber(vc.get_project_arg("remp-port"))
-    connect.username = vc.get_project_arg("remp-username")
-        or ("user-" .. base64.encode_urlsafe(random.bytes(3)))
-    connect.login_uuid = vc.get_project_arg("remp-login-uuid")
-end
-
-menu.page = "server_list"
-app.sleep_until(function() return (menu.page ~= "server_list" and menu.page ~= "add_server") or connect.ip end)
-session.reset('remp:client')
-
-if type(connect.ip) ~= "string" or type(connect.port) ~= "number" then
+local connect = client_setup.request_connect_info(app)
+if not connect then
     app.reset_content()
     return
 end
@@ -34,23 +22,10 @@ local function leave_to_menu()
     end)
 end
 
-menu.page = "connecting"
-
-local state = "connecting"
-local status, socket = pcall(network.tcp_connect, connect.ip, connect.port, function(conn)
-    state = "connected"
-    debug.log("connected to server")
-end)
+local status, conn = client_setup.connect_to_server(app, connect)
 if not status then
-    debug.error(socket)
-    gui.alert("Connection error: "..socket, leave_to_menu)
-    return
-end
-
-app.sleep_until(function() return state ~= "connecting" or not socket:is_alive() end)
-
-if not socket:is_alive() then
-    gui.alert("Connection refused", leave_to_menu)
+    debug.error("Connection error: "..conn)
+    gui.alert("Connection error: "..conn, leave_to_menu)
     return
 end
 
@@ -58,25 +33,7 @@ local util        = require "remp:util"
 local remp_client = require "remp:client"
 remp_client:init()
 
-local server_uuid
-local local_player
-
-local conn = packets.Connection:new(socket)
-do
-    local opcode, data = conn:recvWait(5)
-    if opcode == nil then
-        return gui.alert("Connection timed out", leave_to_menu)
-    elseif opcode == remp.OPCODE_SERVER then
-        server_uuid = data.uuid
-        conn:send(remp.OPCODE_JOIN, {
-            uuid = connect.login_uuid or remp_client:get_login(data.uuid),
-            username = connect.username
-        })
-    else
-        debug.error("expected OPCODE_SERVER, got "..opcode)
-        conn:close()
-    end
-end
+local server_uuid = conn.server_uuid
 
 local function perform_players(data)
     for _, pdata in ipairs(data) do
@@ -98,8 +55,9 @@ local function perform_players(data)
     end
 end
 
+local local_player
 local chunks_data = {}
-while socket:is_alive() do
+while conn.socket:is_alive() do
     local opcode, data = conn:recvWait(5)
     if not opcode then
         return gui.alert("Connection refused", leave_to_menu)
@@ -184,7 +142,7 @@ end
 local world_co = coroutine.create(world_loop)
 local exited = false
 
-while socket:is_alive() do
+while conn.socket:is_alive() do
     app.tick()
     if not world.is_open() then
         remp_client:leave()
@@ -214,7 +172,6 @@ while socket:is_alive() do
     while opcode do
         opcode, data = conn:recv()
         if opcode == remp.OPCODE_CHAT then
-            debug.print(data[1])
             console.chat(data[1])
         elseif opcode == remp.OPCODE_DISCONNECT then
             if world.is_open() then

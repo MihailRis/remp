@@ -3,6 +3,7 @@ local util   = require "util"
 
 local modified_chunks = {}
 
+-- FIXME
 -- function console.submit(text)
 --     client:submit_command(text)
 -- end
