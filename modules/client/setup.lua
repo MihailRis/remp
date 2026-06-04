@@ -2,6 +2,7 @@ local remp = require "remp:remp"
 local packets = require "remp:packets"
 local remp_client = require "remp:client"
 
+local logger = debug.Logger()
 local this = {}
 
 function this.request_connect_info(app)
@@ -23,36 +24,36 @@ function this.request_connect_info(app)
     if type(connect.ip) ~= "string" or type(connect.port) ~= "number" then
         return
     end
+    logger:info(string.format("username: %s", connect.username:escape()))
     return connect
 end
 
-local function init_connection(socket, connect)
+local function init_connection(socket, config)
     local conn = packets.Connection:new(socket)
-    do
-        local opcode, data = conn:recvWait(5)
-        if opcode == nil then
-            return false, "connection timed out"
-        elseif opcode == remp.OPCODE_SERVER then
-            conn.server_uuid = data.uuid
-            conn:send(remp.OPCODE_JOIN, {
-                uuid = connect.login_uuid or remp_client:get_login(data.uuid),
-                username = connect.username
-            })
-        else
-            conn:close()
-            return false, "expected OPCODE_SERVER, got "..opcode
-        end
+    local opcode, data = conn:recvWait(5)
+    if opcode == nil then
+        return false, "connection timed out"
+    elseif opcode == remp.OPCODE_SERVER then
+        conn.server_uuid = data.uuid
+        conn:send(remp.OPCODE_JOIN, {
+            uuid = config.login_uuid or remp_client:get_login(data.uuid),
+            username = config.username
+        })
+    else
+        conn:close()
+        return false, "expected OPCODE_SERVER, got "..opcode
     end
     return true, conn
 end
 
-function this.connect_to_server(app, connect)
+function this.connect_to_server(app, config)
     menu.page = "connecting"
 
     local state = "connecting"
-    local status, socket = pcall(network.tcp_connect, connect.ip, connect.port, function(...)
+    local status, socket = pcall(network.tcp_connect, config.ip, config.port, function(...)
         state = "connected"
-        debug.log("connected to server")
+        logger:info(string.format("successfully connected to tcp:%s:%s",
+            config.ip, config.port))
     end)
 
     if not status then
@@ -64,7 +65,7 @@ function this.connect_to_server(app, connect)
     if not socket:is_alive() then
         return false, "connection refused unexpectedly"
     end
-    return init_connection(socket, connect)
+    return init_connection(socket, config)
 end
 
 return this
